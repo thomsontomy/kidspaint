@@ -6,6 +6,6 @@ jobs:
     steps:
     - checkout
     - run: flutter doctor
-    - run: sdkmanager --update && yes | sdkmanager --licenses
+    - run: (echo y; echo y; echo y; echo y; echo y; echo y) | sdkmanager --licenses
     - run: flutter test
     - run: flutter -v build apk
