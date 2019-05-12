@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:quiver/core.dart';
 
@@ -18,20 +20,27 @@ class PaintProperties {
   int get hashCode => hash2(color.hashCode, thickness.hashCode);
 }
 
+class PaintLine {
+  final PaintProperties paint;
+  List<Offset> line = List();
+
+  PaintLine(this.paint);
+}
+
 class KidsCanvasPainter extends CustomPainter {
   KidsCanvasPainter(this.lines);
 
-  final Map<PaintProperties, List<Offset>> lines;
+  final DoubleLinkedQueue<PaintLine> lines;
 
   void paint(Canvas canvas, Size size) {
-    lines.forEach((paintProperties, points) {
+    lines.forEach((PaintLine line) {
       Paint paint = Paint()
-        ..color = paintProperties.color
-        ..strokeWidth = paintProperties.thickness
+        ..color = line.paint.color
+        ..strokeWidth = line.paint.thickness
         ..strokeCap = StrokeCap.round;
-      for (int i = 0; i < points.length - 1; i++) {
-        if (points[i] != null && points[i + 1] != null)
-          canvas.drawLine(points[i], points[i + 1], paint);
+      for (int i = 0; i < line.line.length - 1; i++) {
+        if (line.line[i] != null && line.line[i + 1] != null)
+          canvas.drawLine(line.line[i], line.line[i + 1], paint);
       }
     });
   }
@@ -40,11 +49,6 @@ class KidsCanvasPainter extends CustomPainter {
     if (other.lines != lines) {
       return true;
     } else {
-      other.lines.forEach((props, list) {
-        if (lines[props] != list) {
-          return true;
-        }
-      });
       return false;
     }
   }
@@ -56,7 +60,22 @@ class KidsPaint extends StatefulWidget {
 
 class KidsPaintState extends State<KidsPaint> {
   PaintProperties _currentPaintProperties = PaintProperties(Colors.red, 5.0);
-  Map<PaintProperties, List<Offset>> _lines = Map();
+  DoubleLinkedQueue<PaintLine> _lines;
+
+  @override
+  void initState() {
+    super.initState();
+    _lines = DoubleLinkedQueue.of([PaintLine(_currentPaintProperties)]);
+  }
+
+  void undoLastAction() {
+    setState(() {
+      _lines = DoubleLinkedQueue.from(_lines..removeLast());
+      if (_lines.isEmpty) {
+        _lines.add(PaintLine(_currentPaintProperties));
+      }
+    });
+  }
 
   Widget build(BuildContext context) {
     return new Stack(
@@ -67,24 +86,37 @@ class KidsPaintState extends State<KidsPaint> {
             Offset localPosition =
             referenceBox.globalToLocal(details.globalPosition);
             setState(() {
-              _lines = Map.from(_lines)
-                ..update(
-                    _currentPaintProperties, (list) => list..add(localPosition),
-                    ifAbsent: () => <Offset>[localPosition]);
+              if (_lines.last.paint != _currentPaintProperties) {
+                _lines.add(PaintLine(_currentPaintProperties));
+              }
+              _lines =
+                  DoubleLinkedQueue.from(_lines..last.line.add(localPosition));
             });
           },
           onPanEnd: (DragEndDetails details) => setState(() {
-            _lines = Map.from(_lines)
-              ..update(_currentPaintProperties, (list) => list..add(null));
+            _lines = DoubleLinkedQueue.from(_lines..last.line.add(null));
           }),
         ),
         CustomPaint(painter: new KidsCanvasPainter(_lines)),
         Column(
           children: <Widget>[
             Expanded(child: Text('')),
-            RaisedButton(
-              onPressed: () => setState(() => _lines.clear()),
-              child: Text('Clean'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                RaisedButton(
+                  onPressed: () =>
+                      setState(() =>
+                      _lines
+                        ..clear()
+                        ..add(PaintLine(_currentPaintProperties))),
+                  child: Text('Clean'),
+                ),
+                RaisedButton(
+                  onPressed: undoLastAction,
+                  child: Text('Undo'),
+                )
+              ],
             ),
             buildColorPalette(),
           ],
