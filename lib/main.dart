@@ -93,6 +93,10 @@ class KidsPaintState extends State<KidsPaint> {
                   DoubleLinkedQueue.from(_lines..last.line.add(localPosition));
             });
           },
+          onPanStart: (DragStartDetails details) =>
+              setState(() {
+                _lines.add(PaintLine(_currentPaintProperties));
+              }),
           onPanEnd: (DragEndDetails details) => setState(() {
             _lines = DoubleLinkedQueue.from(_lines..last.line.add(null));
           }),
