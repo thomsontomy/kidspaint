@@ -133,6 +133,7 @@ class KidsPaintState extends State<KidsPaint> {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           getColorWidget(Colors.blue),
           getColorWidget(Colors.red),
@@ -147,14 +148,14 @@ class KidsPaintState extends State<KidsPaint> {
   }
 
   Widget getColorWidget(Color color) {
-    return InkWell(
-      child: Container(
-        color: color,
-        height: 50,
-        width: 50,
-      ),
-      onTap: () => _currentPaintProperties = PaintProperties(color, 5.0),
-    );
+    return ButtonTheme(
+        height: 30,
+        minWidth: 30,
+        child: MaterialButton(
+          color: color,
+          onPressed: () =>
+          _currentPaintProperties = PaintProperties(color, 5.0),
+        ));
   }
 }
 
