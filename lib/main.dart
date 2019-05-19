@@ -59,6 +59,8 @@ class KidsPaint extends StatefulWidget {
 }
 
 class KidsPaintState extends State<KidsPaint> {
+  Color _currentColour = Colors.red;
+  double _currentThickness = 5.0;
   PaintProperties _currentPaintProperties = PaintProperties(Colors.red, 5.0);
   DoubleLinkedQueue<PaintLine> _lines;
 
@@ -104,26 +106,30 @@ class KidsPaintState extends State<KidsPaint> {
         CustomPaint(painter: new KidsCanvasPainter(_lines)),
         Column(
           children: <Widget>[
-            Expanded(child: Text('')),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                RaisedButton(
-                  onPressed: () =>
-                      setState(() =>
-                      _lines
-                        ..clear()
-                        ..add(PaintLine(_currentPaintProperties))),
-                  child: Text('Clean'),
-                ),
-                RaisedButton(
-                  onPressed: undoLastAction,
-                  child: Text('Undo'),
-                )
-              ],
-            ),
+            Expanded(child: buildBrushSizePalette()),
+            buildCleanupButtons(),
             buildColorPalette(),
           ],
+        )
+      ],
+    );
+  }
+
+  Row buildCleanupButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        RaisedButton(
+          onPressed: () =>
+              setState(() =>
+              _lines
+                ..clear()
+                ..add(PaintLine(_currentPaintProperties))),
+          child: Text('Clean'),
+        ),
+        RaisedButton(
+          onPressed: undoLastAction,
+          child: Text('Undo'),
         )
       ],
     );
@@ -154,8 +160,44 @@ class KidsPaintState extends State<KidsPaint> {
         child: MaterialButton(
           color: color,
           onPressed: () =>
-          _currentPaintProperties = PaintProperties(color, 5.0),
+          this
+            .._currentPaintProperties =
+            PaintProperties(color, _currentThickness)
+            .._currentColour = color,
         ));
+  }
+
+  Widget buildBrushSizePalette() {
+    return Row(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              getBrushSizeWidget(3.0),
+              getBrushSizeWidget(5.0),
+              getBrushSizeWidget(7.0),
+              getBrushSizeWidget(9.0)
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget getBrushSizeWidget(double thickness) {
+    return ButtonTheme(
+      height: 30,
+      minWidth: 30,
+      child: MaterialButton(
+          color: Colors.blueGrey,
+          onPressed: () =>
+          this
+            .._currentPaintProperties =
+            PaintProperties(_currentColour, thickness)
+            .._currentThickness = thickness),
+    );
   }
 }
 
